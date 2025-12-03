@@ -1,0 +1,15 @@
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.csproj.AssemblyReference.cache
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.AssemblyInfoInputs.cache
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.AssemblyInfo.cs
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.csproj.CoreCompileInputs.cache
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.sourcelink.json
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\bin\Debug\net6.0\LicenseManagement.Client.deps.json
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\bin\Debug\net6.0\LicenseManagement.Client.dll
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\bin\Debug\net6.0\LicenseManagement.Client.pdb
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\bin\Debug\net6.0\LicenseManagement.Client.xml
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.dll
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\refint\LicenseManagement.Client.dll
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.xml
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\LicenseManagement.Client.pdb
+C:\Users\Ashra\source\repos\Hymma.LM\LicenseManagement.Client\obj\Debug\net6.0\ref\LicenseManagement.Client.dll

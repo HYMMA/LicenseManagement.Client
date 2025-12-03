@@ -1,0 +1,510 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LicenseManagement.Client</name>
+    </assembly>
+    <members>
+        <member name="T:LicenseManagement.Client.Exceptions.LicenseManagementException">
+            <summary>
+            Exception thrown when the License Management API returns an error.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Exceptions.LicenseManagementException.StatusCode">
+            <summary>
+            The HTTP status code returned by the API.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Exceptions.LicenseManagementException.ResponseContent">
+            <summary>
+            The raw response content from the API.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.Exceptions.LicenseManagementException.#ctor(System.String,System.Net.HttpStatusCode,System.String)">
+            <summary>
+            Creates a new LicenseManagementException.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.Exceptions.LicenseManagementException.#ctor(System.String,System.Net.HttpStatusCode,System.Exception)">
+            <summary>
+            Creates a new LicenseManagementException with an inner exception.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for registering the License Management client with dependency injection.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.Extensions.ServiceCollectionExtensions.AddLicenseManagementClient(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{LicenseManagement.Client.LicenseManagementClientOptions})">
+            <summary>
+            Adds the License Management client to the service collection.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configureOptions">Action to configure the client options.</param>
+            <returns>The service collection for chaining.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.Extensions.ServiceCollectionExtensions.AddLicenseManagementClient(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{LicenseManagement.Client.LicenseManagementClientOptions},System.Action{System.Net.Http.HttpClient})">
+            <summary>
+            Adds the License Management client to the service collection with a custom HTTP client configuration.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configureOptions">Action to configure the client options.</param>
+            <param name="configureClient">Action to configure the HTTP client.</param>
+            <returns>The service collection for chaining.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.Extensions.ServiceCollectionExtensions.AddLicenseManagementClient(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{LicenseManagement.Client.LicenseManagementClientOptions},System.Action{Microsoft.Extensions.DependencyInjection.IHttpClientBuilder})">
+            <summary>
+            Adds the License Management client to the service collection with a custom HTTP client builder configuration.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configureOptions">Action to configure the client options.</param>
+            <param name="configureBuilder">Action to configure the HTTP client builder (for adding handlers, etc.).</param>
+            <returns>The service collection for chaining.</returns>
+        </member>
+        <member name="T:LicenseManagement.Client.ILicenseManagementClient">
+            <summary>
+            Client interface for the License Management API.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetLicenseAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets a license by product and computer.
+            </summary>
+            <param name="productId">The product ID (ULID with PRD_ prefix).</param>
+            <param name="computerId">The computer ID (ULID with PC_ prefix).</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The license if found, null otherwise.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.CreateLicenseAsync(LicenseManagement.Client.Requests.CreateLicenseRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new trial license.
+            </summary>
+            <param name="request">The license creation request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The created license.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.UpdateLicenseAsync(LicenseManagement.Client.Requests.UpdateLicenseRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates a license (attach or detach a receipt).
+            </summary>
+            <param name="request">The license update request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetReceiptAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets a receipt by code.
+            </summary>
+            <param name="code">The receipt code.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The receipt if found, null otherwise.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.CreateReceiptAsync(LicenseManagement.Client.Requests.CreateReceiptRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new receipt.
+            </summary>
+            <param name="request">The receipt creation request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The created receipt.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.UpdateReceiptAsync(LicenseManagement.Client.Requests.UpdateReceiptRequest,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing receipt.
+            </summary>
+            <param name="request">The receipt update request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GenerateReceiptCodeAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generates a receipt code for a product and email combination.
+            </summary>
+            <param name="productName">The product name.</param>
+            <param name="email">The buyer's email address.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The generated receipt code.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetProductAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets a product by ID.
+            </summary>
+            <param name="productId">The product ID (ULID with PRD_ prefix).</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The product if found, null otherwise.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetProductsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Gets all products for the vendor.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A list of products.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.CreateProductAsync(LicenseManagement.Client.Requests.CreateProductRequest,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new product.
+            </summary>
+            <param name="request">The product creation request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The created product.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetComputerAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets a computer by MAC address.
+            </summary>
+            <param name="macAddress">The MAC address or hardware ID.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The computer if found, null otherwise.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.RegisterComputerAsync(LicenseManagement.Client.Requests.RegisterComputerRequest,System.Threading.CancellationToken)">
+            <summary>
+            Registers a new computer.
+            </summary>
+            <param name="request">The computer registration request.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The registered computer.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetComputersAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets all computers registered to a receipt.
+            </summary>
+            <param name="receiptCode">The receipt code.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A list of computers.</returns>
+        </member>
+        <member name="M:LicenseManagement.Client.ILicenseManagementClient.GetPublicKeyAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Gets the vendor's public signing key.
+            </summary>
+            <param name="format">The key format: "xml" or "pem". Default is "xml".</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The public key in the requested format.</returns>
+        </member>
+        <member name="T:LicenseManagement.Client.LicenseManagementClient">
+            <summary>
+            HTTP client implementation for the License Management API.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.#ctor(System.Net.Http.HttpClient,Microsoft.Extensions.Options.IOptions{LicenseManagement.Client.LicenseManagementClientOptions})">
+            <summary>
+            Creates a new LicenseManagementClient.
+            </summary>
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetLicenseAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.CreateLicenseAsync(LicenseManagement.Client.Requests.CreateLicenseRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.UpdateLicenseAsync(LicenseManagement.Client.Requests.UpdateLicenseRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetReceiptAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.CreateReceiptAsync(LicenseManagement.Client.Requests.CreateReceiptRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.UpdateReceiptAsync(LicenseManagement.Client.Requests.UpdateReceiptRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GenerateReceiptCodeAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetProductAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetProductsAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.CreateProductAsync(LicenseManagement.Client.Requests.CreateProductRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetComputerAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.RegisterComputerAsync(LicenseManagement.Client.Requests.RegisterComputerRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetComputersAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.GetPublicKeyAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:LicenseManagement.Client.LicenseManagementClient.PatchAsJsonAsync``1(System.String,``0,System.Threading.CancellationToken)">
+            <summary>
+            Sends a PATCH request with JSON body (cross-platform compatible).
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.LicenseManagementClientOptions">
+            <summary>
+            Configuration options for the License Management client.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.LicenseManagementClientOptions.ApiKey">
+            <summary>
+            The master API key for authenticating with the License Management API.
+            Format: MST_{vendorUlid}_{secret}
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.LicenseManagementClientOptions.BaseUrl">
+            <summary>
+            The base URL of the License Management API.
+            Default: https://license-management.com/api
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.LicenseManagementClientOptions.TimeoutSeconds">
+            <summary>
+            Timeout for HTTP requests in seconds.
+            Default: 30 seconds.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Models.Computer">
+            <summary>
+            Represents a computer/device that has software installed.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Computer.Id">
+            <summary>
+            The unique identifier (ULID) of the computer.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Computer.MacAddress">
+            <summary>
+            The device identifier (typically MAC address or hardware ID).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Computer.Name">
+            <summary>
+            The friendly name of the computer as seen by users.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Models.License">
+            <summary>
+            Represents a software license for a specific product and computer.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.Id">
+            <summary>
+            The unique identifier (ULID) of the license.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.MaxTrialDays">
+            <summary>
+            The maximum number of days this license can be used as a trial.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.Expires">
+            <summary>
+            When this license expires (trial period end or receipt expiration).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.Receipt">
+            <summary>
+            The receipt indicating this license has been purchased. Null if trial.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.Product">
+            <summary>
+            The product this license grants access to.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.Computer">
+            <summary>
+            The computer this license is assigned to.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.IsTrial">
+            <summary>
+            Whether this is a paid license (has receipt) or trial license.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.License.IsExpired">
+            <summary>
+            Whether this license has expired.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Models.Product">
+            <summary>
+            Represents a software product that can be licensed.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Product.Id">
+            <summary>
+            The unique identifier (ULID) of the product.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Product.Name">
+            <summary>
+            The name of the product, unique per vendor.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Product.Features">
+            <summary>
+            List of features this product includes.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Product.Vendor">
+            <summary>
+            The vendor (maker) of this product.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Models.Receipt">
+            <summary>
+            Represents a purchase receipt that grants license seats.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.Id">
+            <summary>
+            The unique identifier (ULID) of the receipt.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.Code">
+            <summary>
+            The receipt code - a hash of email and transaction ID used to identify the purchase.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.Qty">
+            <summary>
+            The number of license seats included in this receipt.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.Product">
+            <summary>
+            The product this receipt grants a license for.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.BuyerEmail">
+            <summary>
+            The email address of the customer who purchased the product.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Receipt.Expires">
+            <summary>
+            The expiration date of this receipt. For subscription products, this is the renewal date.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Models.Vendor">
+            <summary>
+            Represents a software vendor in the license management system.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Vendor.Id">
+            <summary>
+            The unique identifier (ULID) of the vendor.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Models.Vendor.Name">
+            <summary>
+            The official name of the vendor.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.CreateLicenseRequest">
+            <summary>
+            Request to create a new trial license.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateLicenseRequest.Product">
+            <summary>
+            The product ID (ULID with PRD_ prefix).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateLicenseRequest.Computer">
+            <summary>
+            The computer ID (ULID with PC_ prefix).
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.CreateProductRequest">
+            <summary>
+            Request to create a new product.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateProductRequest.Name">
+            <summary>
+            The name of the product (must be unique per vendor).
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.CreateReceiptRequest">
+            <summary>
+            Request to create a new receipt (purchase record).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateReceiptRequest.Qty">
+            <summary>
+            The number of license seats (computers that can use this receipt).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateReceiptRequest.Product">
+            <summary>
+            The product ID (ULID with PRD_ prefix).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateReceiptRequest.Code">
+            <summary>
+            Optional receipt code. If not provided, one will be generated.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateReceiptRequest.BuyerEmail">
+            <summary>
+            The email address of the customer.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.CreateReceiptRequest.Expires">
+            <summary>
+            When this receipt expires. For subscription products, this is the renewal date.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.RegisterComputerRequest">
+            <summary>
+            Request to register a new computer.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.RegisterComputerRequest.MacAddress">
+            <summary>
+            The device identifier (typically MAC address or hardware ID).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.RegisterComputerRequest.Name">
+            <summary>
+            The friendly name of the computer.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.UpdateLicenseRequest">
+            <summary>
+            Request to update a license (attach or detach a receipt).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateLicenseRequest.License">
+            <summary>
+            The license ID (ULID with LIC_ prefix).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateLicenseRequest.Code">
+            <summary>
+            The receipt code to attach. Set to null to unregister the computer from the license.
+            </summary>
+        </member>
+        <member name="T:LicenseManagement.Client.Requests.UpdateReceiptRequest">
+            <summary>
+            Request to update an existing receipt.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateReceiptRequest.Id">
+            <summary>
+            The receipt ID (ULID with RCT_ prefix).
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateReceiptRequest.Qty">
+            <summary>
+            Updated number of license seats.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateReceiptRequest.Expires">
+            <summary>
+            Updated expiration date.
+            </summary>
+        </member>
+        <member name="P:LicenseManagement.Client.Requests.UpdateReceiptRequest.BuyerEmail">
+            <summary>
+            Updated buyer email address.
+            </summary>
+        </member>
+    </members>
+</doc>
