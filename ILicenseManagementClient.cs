@@ -138,4 +138,122 @@ public interface ILicenseManagementClient
     Task<string> GetPublicKeyAsync(string format = "xml", CancellationToken cancellationToken = default);
 
     #endregion
+
+    #region Webhooks
+
+    /// <summary>
+    /// Gets all webhooks for the vendor.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of webhooks.</returns>
+    Task<IEnumerable<Webhook>> GetWebhooksAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a webhook by ID.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The webhook if found, null otherwise.</returns>
+    Task<Webhook?> GetWebhookAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new webhook.
+    /// </summary>
+    /// <param name="request">The webhook creation request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created webhook including the signing secret.</returns>
+    Task<WebhookCreated> CreateWebhookAsync(CreateWebhookRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates a webhook.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="request">The webhook update request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task UpdateWebhookAsync(string webhookId, UpdateWebhookRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a webhook.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task DeleteWebhookAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rotates the webhook secret.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="immediateRotation">If true, immediately invalidate the old secret.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The new secret information.</returns>
+    Task<WebhookSecretRotated> RotateWebhookSecretAsync(string webhookId, bool immediateRotation = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Completes secret rotation by removing the old secret.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task CompleteSecretRotationAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets webhook delivery history.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="limit">Maximum number of deliveries to return (default 50).</param>
+    /// <param name="offset">Offset for pagination (default 0).</param>
+    /// <param name="status">Optional status filter (pending, success, failed, retrying, dead_letter).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of webhook deliveries.</returns>
+    Task<IEnumerable<WebhookDelivery>> GetWebhookDeliveriesAsync(string webhookId, int limit = 50, int offset = 0, string? status = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a specific webhook delivery.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="deliveryId">The delivery ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The delivery details.</returns>
+    Task<WebhookDeliveryDetail?> GetWebhookDeliveryAsync(string webhookId, string deliveryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Replays a failed webhook delivery.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="deliveryId">The delivery ID (ULID).</param>
+    /// <param name="targetUrl">Optional override URL for the replay.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The replay delivery result.</returns>
+    Task<WebhookDelivery> ReplayWebhookDeliveryAsync(string webhookId, string deliveryId, string? targetUrl = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets webhook health status.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The webhook health status.</returns>
+    Task<WebhookHealth> GetWebhookHealthAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets webhook delivery statistics.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The webhook statistics.</returns>
+    Task<WebhookStats> GetWebhookStatsAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets available webhook event types.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The available event types.</returns>
+    Task<WebhookEventTypes> GetWebhookEventTypesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a test webhook to the specified endpoint.
+    /// </summary>
+    /// <param name="webhookId">The webhook ID (ULID).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task TestWebhookAsync(string webhookId, CancellationToken cancellationToken = default);
+
+    #endregion
 }

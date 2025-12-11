@@ -235,6 +235,142 @@ public class LicenseManagementClient : ILicenseManagementClient
 
     #endregion
 
+    #region Webhooks
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<Webhook>> GetWebhooksAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync("webhook", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<IEnumerable<Webhook>>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task<Webhook?> GetWebhookAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"webhook/{Uri.EscapeDataString(webhookId)}", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<Webhook>(JsonOptions, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookCreated> CreateWebhookAsync(CreateWebhookRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("webhook", request, JsonOptions, cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookCreated>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateWebhookAsync(string webhookId, UpdateWebhookRequest request, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, $"webhook/{Uri.EscapeDataString(webhookId)}")
+        {
+            Content = content
+        };
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteWebhookAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.DeleteAsync($"webhook/{Uri.EscapeDataString(webhookId)}", cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookSecretRotated> RotateWebhookSecretAsync(string webhookId, bool immediateRotation = false, CancellationToken cancellationToken = default)
+    {
+        var request = new { ImmediateRotation = immediateRotation };
+        var response = await _httpClient.PostAsJsonAsync($"webhook/{Uri.EscapeDataString(webhookId)}/rotate-secret", request, JsonOptions, cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookSecretRotated>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task CompleteSecretRotationAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsync($"webhook/{Uri.EscapeDataString(webhookId)}/complete-rotation", null, cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WebhookDelivery>> GetWebhookDeliveriesAsync(string webhookId, int limit = 50, int offset = 0, string? status = null, CancellationToken cancellationToken = default)
+    {
+        var url = $"webhook/{Uri.EscapeDataString(webhookId)}/deliveries?limit={limit}&offset={offset}";
+        if (!string.IsNullOrEmpty(status))
+        {
+            url += $"&status={Uri.EscapeDataString(status)}";
+        }
+
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<IEnumerable<WebhookDelivery>>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookDeliveryDetail?> GetWebhookDeliveryAsync(string webhookId, string deliveryId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"webhook/{Uri.EscapeDataString(webhookId)}/deliveries/{Uri.EscapeDataString(deliveryId)}", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<WebhookDeliveryDetail>(JsonOptions, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookDelivery> ReplayWebhookDeliveryAsync(string webhookId, string deliveryId, string? targetUrl = null, CancellationToken cancellationToken = default)
+    {
+        var request = new { TargetUrl = targetUrl };
+        var response = await _httpClient.PostAsJsonAsync(
+            $"webhook/{Uri.EscapeDataString(webhookId)}/deliveries/{Uri.EscapeDataString(deliveryId)}/replay",
+            request, JsonOptions, cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookDelivery>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookHealth> GetWebhookHealthAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"webhook/{Uri.EscapeDataString(webhookId)}/health", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookHealth>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookStats> GetWebhookStatsAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"webhook/{Uri.EscapeDataString(webhookId)}/stats", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookStats>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookEventTypes> GetWebhookEventTypesAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync("webhook/events", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WebhookEventTypes>(JsonOptions, cancellationToken))!;
+    }
+
+    /// <inheritdoc />
+    public async Task TestWebhookAsync(string webhookId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsync($"webhook/{Uri.EscapeDataString(webhookId)}/test", null, cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    #endregion
+
     #region Helpers
 
     /// <summary>

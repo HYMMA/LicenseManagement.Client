@@ -18,4 +18,11 @@ public class CreateLicenseRequest
     /// </summary>
     [JsonPropertyName("computer")]
     public string Computer { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional metadata to attach to the license (key-value pairs).
+    /// </summary>
+    /// <remarks>Keys and values are limited to 100 characters each. Max 20 entries recommended.</remarks>
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, string>? Metadata { get; set; }
 }

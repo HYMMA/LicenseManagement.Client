@@ -11,12 +11,12 @@ public class License
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    /// The maximum number of days this license can be used as a trial.
+    /// When the trial period ends for this license.
     /// </summary>
-    public int MaxTrialDays { get; set; } = 21;
+    public DateTime TrialEndDate { get; set; }
 
     /// <summary>
-    /// When this license expires (trial period end or receipt expiration).
+    /// When this license file expires (cache expiration).
     /// </summary>
     public DateTime Expires { get; set; }
 
@@ -36,12 +36,22 @@ public class License
     public Computer? Computer { get; set; }
 
     /// <summary>
+    /// Key-value metadata attached to this license by the publisher.
+    /// </summary>
+    public Dictionary<string, string>? Metadata { get; set; }
+
+    /// <summary>
     /// Whether this is a paid license (has receipt) or trial license.
     /// </summary>
     public bool IsTrial => Receipt == null;
 
     /// <summary>
-    /// Whether this license has expired.
+    /// Whether this license has expired (cache expiration).
     /// </summary>
     public bool IsExpired => DateTime.UtcNow > Expires;
+
+    /// <summary>
+    /// Whether the trial period has ended.
+    /// </summary>
+    public bool IsTrialExpired => DateTime.UtcNow > TrialEndDate;
 }
