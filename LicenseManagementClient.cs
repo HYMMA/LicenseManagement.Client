@@ -135,6 +135,51 @@ public class LicenseManagementClient : ILicenseManagementClient
 #endif
     }
 
+    /// <inheritdoc />
+    public async Task<string> ResetReceiptCodeAsync(string code, CancellationToken cancellationToken = default)
+    {
+        // 1. Get existing receipt
+        var existingReceipt = await GetReceiptAsync(code, cancellationToken)
+            ?? throw new LicenseManagementException(
+                "Receipt not found",
+                System.Net.HttpStatusCode.NotFound,
+                $"No receipt exists with code: {code}");
+
+        // 2. Void the existing receipt (set qty=0, expires=now)
+        await UpdateReceiptAsync(new UpdateReceiptRequest
+        {
+            Id = existingReceipt.Id,
+            Qty = 0,
+            Expires = DateTime.UtcNow
+        }, cancellationToken);
+
+        // 3. Generate new code using modified email to avoid collision
+        var emailParts = existingReceipt.BuyerEmail.Split('@');
+        var modifiedEmail = emailParts.Length == 2
+            ? $"{Guid.NewGuid():N}@{emailParts[1]}"
+            : $"{Guid.NewGuid():N}@temp.local";
+
+        var newCode = await GenerateReceiptCodeAsync(
+            existingReceipt.Product?.Id ?? throw new LicenseManagementException("Product ID missing from receipt", (System.Net.HttpStatusCode)422, string.Empty),
+            modifiedEmail,
+            cancellationToken);
+
+        if (string.IsNullOrEmpty(newCode))
+            newCode = Guid.NewGuid().ToString("N");
+
+        // 4. Create new receipt with original buyer info
+        await CreateReceiptAsync(new CreateReceiptRequest
+        {
+            Code = newCode,
+            BuyerEmail = existingReceipt.BuyerEmail,
+            Product = existingReceipt.Product.Id,
+            Expires = existingReceipt.Expires,
+            Qty = existingReceipt.Qty
+        }, cancellationToken);
+
+        return newCode;
+    }
+
     #endregion
 
     #region Products

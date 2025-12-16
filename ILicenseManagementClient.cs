@@ -70,6 +70,16 @@ public interface ILicenseManagementClient
     /// <returns>The generated receipt code.</returns>
     Task<string> GenerateReceiptCodeAsync(string productName, string email, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Resets a receipt code by voiding the existing receipt and creating a new one with a fresh code.
+    /// The new receipt retains the same buyer email, product, expiration date, and quantity.
+    /// </summary>
+    /// <param name="code">The current receipt code to reset.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The new receipt code.</returns>
+    /// <exception cref="Exceptions.LicenseManagementException">Thrown when the receipt is not found or the operation fails.</exception>
+    Task<string> ResetReceiptCodeAsync(string code, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region Products
