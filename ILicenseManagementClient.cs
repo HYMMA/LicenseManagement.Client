@@ -80,6 +80,15 @@ public interface ILicenseManagementClient
     /// <exception cref="Exceptions.LicenseManagementException">Thrown when the receipt is not found or the operation fails.</exception>
     Task<string> ResetReceiptCodeAsync(string code, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gets all receipts for a buyer and product combination.
+    /// </summary>
+    /// <param name="buyerEmail">The buyer's email address.</param>
+    /// <param name="productId">The product ID (ULID with PRD_ prefix).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of receipts, or empty if none found.</returns>
+    Task<IEnumerable<Receipt>> GetReceiptsAsync(string buyerEmail, string productId, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region Products

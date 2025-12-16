@@ -180,6 +180,18 @@ public class LicenseManagementClient : ILicenseManagementClient
         return newCode;
     }
 
+    /// <inheritdoc />
+    public async Task<IEnumerable<Receipt>> GetReceiptsAsync(string buyerEmail, string productId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"receipt/all?buyerEmail={Uri.EscapeDataString(buyerEmail)}&product={Uri.EscapeDataString(productId)}", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return Enumerable.Empty<Receipt>();
+
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<IEnumerable<Receipt>>(JsonOptions, cancellationToken)) ?? Enumerable.Empty<Receipt>();
+    }
+
     #endregion
 
     #region Products
