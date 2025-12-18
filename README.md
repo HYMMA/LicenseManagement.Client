@@ -177,5 +177,5 @@ MIT - See [LICENSE](LICENSE) for details.
 
 ## Related Packages
 
-- [LicenseManagement.EndUser](https://www.nuget.org/packages/Hymma.Lm.EndUser) - End-user SDK for license validation
-- [LicenseManagement.EndUser.Wpf](https://www.nuget.org/packages/Hymma.Lm.EndUser.Wpf) - WPF components for license UI
+- [LicenseManagement.EndUser](https://www.nuget.org/packages/LicenseManagement.EndUser) - End-user SDK for license validation
+- [LicenseManagement.EndUser.Wpf](https://www.nuget.org/packages/LicenseManagement.EndUser.Wpf) - WPF components for license UI
