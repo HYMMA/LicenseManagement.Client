@@ -13,3 +13,6 @@ nupkg/
 
 # Rider
 .idea/
+
+# Claude Code
+.claude/
