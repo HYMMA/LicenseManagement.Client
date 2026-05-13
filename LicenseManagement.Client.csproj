@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Properties -->
     <PackageId>LicenseManagement.Client</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Authors>Hymma</Authors>
     <Company>Hymma</Company>
     <Product>License Management Client SDK</Product>
@@ -25,6 +25,14 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!-- Test project lives under Tests/ — exclude from the package's implicit globs. -->
+  <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <Content Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
   </ItemGroup>
 
   <ItemGroup>

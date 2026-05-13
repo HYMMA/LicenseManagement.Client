@@ -51,12 +51,8 @@ public class LicenseManagementClient : ILicenseManagementClient
     public async Task<License?> GetLicenseAsync(string productId, string computerId, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"license?product={Uri.EscapeDataString(productId)}&computer={Uri.EscapeDataString(computerId)}", cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return null;
-
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<License>(JsonOptions, cancellationToken);
+        return await ReadJsonOrDefaultAsync<License>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -91,12 +87,8 @@ public class LicenseManagementClient : ILicenseManagementClient
     public async Task<Receipt?> GetReceiptAsync(string code, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"receipt?code={Uri.EscapeDataString(code)}", cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return null;
-
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<Receipt>(JsonOptions, cancellationToken);
+        return await ReadJsonOrDefaultAsync<Receipt>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -184,12 +176,8 @@ public class LicenseManagementClient : ILicenseManagementClient
     public async Task<IEnumerable<Receipt>> GetReceiptsAsync(string buyerEmail, string productId, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"receipt/all?buyerEmail={Uri.EscapeDataString(buyerEmail)}&product={Uri.EscapeDataString(productId)}", cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return Enumerable.Empty<Receipt>();
-
         await EnsureSuccessAsync(response);
-        return (await response.Content.ReadFromJsonAsync<IEnumerable<Receipt>>(JsonOptions, cancellationToken)) ?? Enumerable.Empty<Receipt>();
+        return await ReadJsonOrEmptyAsync<Receipt>(response, cancellationToken);
     }
 
     #endregion
@@ -200,12 +188,8 @@ public class LicenseManagementClient : ILicenseManagementClient
     public async Task<Product?> GetProductAsync(string productId, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"product?product={Uri.EscapeDataString(productId)}", cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return null;
-
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<Product>(JsonOptions, cancellationToken);
+        return await ReadJsonOrDefaultAsync<Product>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -213,7 +197,7 @@ public class LicenseManagementClient : ILicenseManagementClient
     {
         var response = await _httpClient.GetAsync("product/all", cancellationToken);
         await EnsureSuccessAsync(response);
-        return (await response.Content.ReadFromJsonAsync<IEnumerable<Product>>(JsonOptions, cancellationToken))!;
+        return await ReadJsonOrEmptyAsync<Product>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -241,12 +225,8 @@ public class LicenseManagementClient : ILicenseManagementClient
     public async Task<Computer?> GetComputerAsync(string macAddress, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"computer?macAddress={Uri.EscapeDataString(macAddress)}", cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return null;
-
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<Computer>(JsonOptions, cancellationToken);
+        return await ReadJsonOrDefaultAsync<Computer>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -271,7 +251,7 @@ public class LicenseManagementClient : ILicenseManagementClient
     {
         var response = await _httpClient.GetAsync($"computer/all?receiptCode={Uri.EscapeDataString(receiptCode)}", cancellationToken);
         await EnsureSuccessAsync(response);
-        return (await response.Content.ReadFromJsonAsync<IEnumerable<Computer>>(JsonOptions, cancellationToken))!;
+        return await ReadJsonOrEmptyAsync<Computer>(response, cancellationToken);
     }
 
     #endregion
@@ -299,7 +279,7 @@ public class LicenseManagementClient : ILicenseManagementClient
     {
         var response = await _httpClient.GetAsync("webhook", cancellationToken);
         await EnsureSuccessAsync(response);
-        return (await response.Content.ReadFromJsonAsync<IEnumerable<Webhook>>(JsonOptions, cancellationToken))!;
+        return await ReadJsonOrEmptyAsync<Webhook>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -311,7 +291,7 @@ public class LicenseManagementClient : ILicenseManagementClient
             return null;
 
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<Webhook>(JsonOptions, cancellationToken);
+        return await ReadJsonOrDefaultAsync<Webhook>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -369,7 +349,7 @@ public class LicenseManagementClient : ILicenseManagementClient
 
         var response = await _httpClient.GetAsync(url, cancellationToken);
         await EnsureSuccessAsync(response);
-        return (await response.Content.ReadFromJsonAsync<IEnumerable<WebhookDelivery>>(JsonOptions, cancellationToken))!;
+        return await ReadJsonOrEmptyAsync<WebhookDelivery>(response, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -429,6 +409,30 @@ public class LicenseManagementClient : ILicenseManagementClient
     #endregion
 
     #region Helpers
+
+    /// <summary>
+    /// Deserializes a JSON response body, returning default(T) when the response is 204 No Content
+    /// or has an empty body. Guards against System.Text.Json throwing on empty input.
+    /// </summary>
+    private static async Task<T?> ReadJsonOrDefaultAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0)
+            return default;
+
+        return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+    }
+
+    /// <summary>
+    /// Deserializes a JSON array response body, returning an empty sequence when the response is
+    /// 204 No Content, has an empty body, or deserializes to null.
+    /// </summary>
+    private static async Task<IEnumerable<T>> ReadJsonOrEmptyAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.StatusCode == HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0)
+            return Enumerable.Empty<T>();
+
+        return (await response.Content.ReadFromJsonAsync<IEnumerable<T>>(JsonOptions, cancellationToken)) ?? Enumerable.Empty<T>();
+    }
 
     /// <summary>
     /// Sends a PATCH request with JSON body (cross-platform compatible).

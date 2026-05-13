@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-05-13
+
+### Fixed
+
+- `GetComputersAsync`, `GetProductsAsync`, `GetWebhooksAsync`, and `GetWebhookDeliveriesAsync` no longer throw `System.Text.Json.JsonException` ("The input does not contain any JSON tokens") when the server returns HTTP 204 No Content or HTTP 200 with an empty body. They now return an empty sequence.
+- The same empty-body guard was applied to the single-item `GetLicenseAsync`, `GetReceiptAsync`, `GetProductAsync`, `GetComputerAsync`, and `GetWebhookAsync` methods, which now return `null` consistently on 204 or 200-with-empty-body responses.
+- Deserialization is centralized in new `ReadJsonOrDefaultAsync<T>` / `ReadJsonOrEmptyAsync<T>` helpers so future endpoints inherit the guard automatically.
+
 ## [1.2.0] - 2025-12-17
 
 ### Added
