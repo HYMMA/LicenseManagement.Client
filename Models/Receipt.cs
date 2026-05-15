@@ -3,7 +3,7 @@ namespace LicenseManagement.Client.Models;
 /// <summary>
 /// Represents a purchase receipt that grants license seats.
 /// </summary>
-public class Receipt
+public sealed class Receipt
 {
     /// <summary>
     /// The unique identifier (ULID) of the receipt.

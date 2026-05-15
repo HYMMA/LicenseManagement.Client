@@ -1,4 +1,7 @@
+using System.Net.Http.Headers;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 #if NET6_0_OR_GREATER
 using Microsoft.Extensions.Configuration;
 #endif
@@ -10,54 +13,104 @@ namespace LicenseManagement.Client.Extensions;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    private static readonly string UserAgentValue = BuildUserAgent();
+
     /// <summary>
     /// Adds the License Management client to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configureOptions">Action to configure the client options.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLicenseManagementClient(
+    /// <returns>The HTTP client builder, so callers can add Polly handlers (recommended).</returns>
+    /// <remarks>
+    /// The recommended companion is a Polly retry policy on transient failures (5xx, 429) that
+    /// honours the <c>Retry-After</c> header returned by the API. Example:
+    /// <code>
+    /// services.AddLicenseManagementClient(o => { ... })
+    ///         .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+    /// </code>
+    /// </remarks>
+    public static IHttpClientBuilder AddLicenseManagementClient(
         this IServiceCollection services,
         Action<LicenseManagementClientOptions> configureOptions)
     {
         services.Configure(configureOptions);
-        services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>();
-        return services;
+        return services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>(ConfigureClient);
     }
 
     /// <summary>
-    /// Adds the License Management client to the service collection with a custom HTTP client configuration.
+    /// Adds the License Management client to the service collection with extra HTTP client configuration.
+    /// The supplied delegate runs <em>after</em> the SDK's own configuration so callers can add or
+    /// override headers without losing the SDK's <c>X-API-KEY</c>, <c>Accept</c>, and <c>User-Agent</c>.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configureOptions">Action to configure the client options.</param>
-    /// <param name="configureClient">Action to configure the HTTP client.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLicenseManagementClient(
+    public static IHttpClientBuilder AddLicenseManagementClient(
         this IServiceCollection services,
         Action<LicenseManagementClientOptions> configureOptions,
         Action<HttpClient> configureClient)
     {
         services.Configure(configureOptions);
-        services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>(configureClient);
-        return services;
+        return services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>((sp, http) =>
+        {
+            ConfigureClient(sp, http);
+            configureClient(http);
+        });
     }
 
     /// <summary>
-    /// Adds the License Management client to the service collection with a custom HTTP client builder configuration.
+    /// Adds the License Management client to the service collection with custom builder configuration
+    /// (handlers, message handlers, Polly policies, etc.).
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configureOptions">Action to configure the client options.</param>
-    /// <param name="configureBuilder">Action to configure the HTTP client builder (for adding handlers, etc.).</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLicenseManagementClient(
         this IServiceCollection services,
         Action<LicenseManagementClientOptions> configureOptions,
         Action<IHttpClientBuilder> configureBuilder)
     {
         services.Configure(configureOptions);
-        var builder = services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>();
+        var builder = services.AddHttpClient<ILicenseManagementClient, LicenseManagementClient>(ConfigureClient);
         configureBuilder(builder);
         return services;
+    }
+
+    private static void ConfigureClient(IServiceProvider sp, HttpClient http)
+    {
+        var opts = sp.GetRequiredService<IOptions<LicenseManagementClientOptions>>().Value;
+
+        if (!string.IsNullOrEmpty(opts.BaseUrl))
+        {
+            http.BaseAddress = new Uri(opts.BaseUrl.TrimEnd('/') + "/");
+        }
+
+        if (opts.TimeoutSeconds > 0)
+        {
+            http.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+        }
+
+        http.DefaultRequestHeaders.Accept.Clear();
+        http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/problem+json"));
+
+        if (!string.IsNullOrEmpty(opts.ApiKey))
+        {
+            if (http.DefaultRequestHeaders.Contains("X-API-KEY"))
+                http.DefaultRequestHeaders.Remove("X-API-KEY");
+            http.DefaultRequestHeaders.Add("X-API-KEY", opts.ApiKey);
+        }
+
+        http.DefaultRequestHeaders.UserAgent.Clear();
+        http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentValue);
+    }
+
+    private static string BuildUserAgent()
+    {
+        var version = typeof(LicenseManagementClient).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? typeof(LicenseManagementClient).Assembly.GetName().Version?.ToString()
+            ?? "0.0.0";
+
+        // Strip metadata after '+' for a cleaner UA token.
+        var plus = version.IndexOf('+');
+        if (plus > 0) version = version.Substring(0, plus);
+
+        return $"LicenseManagement.Client/{version}";
     }
 
 #if NET6_0_OR_GREATER
@@ -90,6 +143,7 @@ public static class ServiceCollectionExtensions
         Action<WebhookOptions> configureOptions)
     {
         services.Configure(configureOptions);
+        services.AddSingleton<IValidateOptions<WebhookOptions>, WebhookOptionsValidator>();
         return services;
     }
 
@@ -97,31 +151,13 @@ public static class ServiceCollectionExtensions
     /// Configures webhook signature verification from IConfiguration.
     /// Reads from the "LicenseManagement:Webhook" section by default.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The configuration instance.</param>
-    /// <param name="sectionName">Optional section name (default: "LicenseManagement:Webhook").</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <example>
-    /// <code>
-    /// // In appsettings.json
-    /// {
-    ///   "LicenseManagement": {
-    ///     "Webhook": {
-    ///       "Secret": "whsec_your_secret_here"
-    ///     }
-    ///   }
-    /// }
-    ///
-    /// // In Program.cs
-    /// builder.Services.AddLicenseManagementWebhooks(builder.Configuration);
-    /// </code>
-    /// </example>
     public static IServiceCollection AddLicenseManagementWebhooks(
         this IServiceCollection services,
         IConfiguration configuration,
         string sectionName = WebhookOptions.SectionName)
     {
         services.Configure<WebhookOptions>(configuration.GetSection(sectionName));
+        services.AddSingleton<IValidateOptions<WebhookOptions>, WebhookOptionsValidator>();
         return services;
     }
 #endif

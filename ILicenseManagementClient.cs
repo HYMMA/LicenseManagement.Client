@@ -6,6 +6,19 @@ namespace LicenseManagement.Client;
 /// <summary>
 /// Client interface for the License Management API.
 /// </summary>
+/// <remarks>
+/// All non-success HTTP responses throw <see cref="Exceptions.LicenseManagementException"/>.
+/// The exception's <c>StatusCode</c>, <c>ResponseContent</c>, and <c>CorrelationId</c> properties
+/// can be used for diagnostics and support escalation.
+///
+/// On 429 Too Many Requests the API returns a <c>Retry-After</c> header in seconds; callers should
+/// configure a Polly retry policy on the registered <see cref="System.Net.Http.HttpClient"/> that
+/// honours it. See <see cref="Extensions.ServiceCollectionExtensions"/>.
+///
+/// Methods that create resources accept an optional idempotency key. Supplying a stable key
+/// (stored alongside the operation in the caller's database) ensures that a retried request after
+/// a transient failure produces the same result rather than a duplicate.
+/// </remarks>
 public interface ILicenseManagementClient
 {
     #region Licenses
@@ -16,7 +29,8 @@ public interface ILicenseManagementClient
     /// <param name="productId">The product ID (ULID with PRD_ prefix).</param>
     /// <param name="computerId">The computer ID (ULID with PC_ prefix).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The license if found, null otherwise.</returns>
+    /// <returns>The license if found.</returns>
+    /// <exception cref="Exceptions.LicenseManagementException">Thrown when the API returns a non-success status (including 404).</exception>
     Task<License?> GetLicenseAsync(string productId, string computerId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -26,6 +40,13 @@ public interface ILicenseManagementClient
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created license.</returns>
     Task<License> CreateLicenseAsync(CreateLicenseRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new trial license with an idempotency key. Repeated calls with the same key
+    /// (within the server's idempotency window) replay the original response instead of creating
+    /// a duplicate.
+    /// </summary>
+    Task<License> CreateLicenseAsync(CreateLicenseRequest request, string? idempotencyKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a license (attach or detach a receipt).
@@ -43,7 +64,8 @@ public interface ILicenseManagementClient
     /// </summary>
     /// <param name="code">The receipt code.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The receipt if found, null otherwise.</returns>
+    /// <returns>The receipt.</returns>
+    /// <exception cref="Exceptions.LicenseManagementException">Thrown when the API returns a non-success status (including 404).</exception>
     Task<Receipt?> GetReceiptAsync(string code, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -53,6 +75,12 @@ public interface ILicenseManagementClient
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created receipt.</returns>
     Task<Receipt> CreateReceiptAsync(CreateReceiptRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new receipt with an idempotency key. Repeated calls with the same key replay the
+    /// original response.
+    /// </summary>
+    Task<Receipt> CreateReceiptAsync(CreateReceiptRequest request, string? idempotencyKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing receipt.
@@ -71,10 +99,11 @@ public interface ILicenseManagementClient
     Task<string> GenerateReceiptCodeAsync(string productName, string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Resets a receipt code by voiding the existing receipt and creating a new one with a fresh code.
-    /// The new receipt retains the same buyer email, product, expiration date, and quantity.
+    /// Atomically rotates a receipt's code on the server. The existing receipt is voided and a
+    /// replacement is inserted inside a single transaction, so a partial failure cannot leave the
+    /// buyer without seats.
     /// </summary>
-    /// <param name="code">The current receipt code to reset.</param>
+    /// <param name="code">The current receipt code to rotate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The new receipt code.</returns>
     /// <exception cref="Exceptions.LicenseManagementException">Thrown when the receipt is not found or the operation fails.</exception>
@@ -98,7 +127,8 @@ public interface ILicenseManagementClient
     /// </summary>
     /// <param name="productId">The product ID (ULID with PRD_ prefix).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The product if found, null otherwise.</returns>
+    /// <returns>The product.</returns>
+    /// <exception cref="Exceptions.LicenseManagementException">Thrown when the API returns a non-success status (including 404).</exception>
     Task<Product?> GetProductAsync(string productId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -116,16 +146,23 @@ public interface ILicenseManagementClient
     /// <returns>The created product.</returns>
     Task<Product> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Creates a new product with an idempotency key. Repeated calls with the same key replay the
+    /// original response.
+    /// </summary>
+    Task<Product> CreateProductAsync(CreateProductRequest request, string? idempotencyKey, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region Computers
 
     /// <summary>
-    /// Gets a computer by MAC address.
+    /// Gets a computer by device identifier.
     /// </summary>
-    /// <param name="macAddress">The MAC address or hardware ID.</param>
+    /// <param name="macAddress">The device identifier (typically MAC address or hardware ID).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The computer if found, null otherwise.</returns>
+    /// <returns>The computer.</returns>
+    /// <exception cref="Exceptions.LicenseManagementException">Thrown when the API returns a non-success status (including 404).</exception>
     Task<Computer?> GetComputerAsync(string macAddress, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -135,6 +172,12 @@ public interface ILicenseManagementClient
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The registered computer.</returns>
     Task<Computer> RegisterComputerAsync(RegisterComputerRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registers a new computer with an idempotency key. Repeated calls with the same key replay
+    /// the original response.
+    /// </summary>
+    Task<Computer> RegisterComputerAsync(RegisterComputerRequest request, string? idempotencyKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all computers registered to a receipt.
@@ -168,7 +211,7 @@ public interface ILicenseManagementClient
     Task<IEnumerable<Webhook>> GetWebhooksAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a webhook by ID.
+    /// Gets a webhook by ID. Returns <c>null</c> when the webhook does not exist (404).
     /// </summary>
     /// <param name="webhookId">The webhook ID (ULID).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -182,6 +225,12 @@ public interface ILicenseManagementClient
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created webhook including the signing secret.</returns>
     Task<WebhookCreated> CreateWebhookAsync(CreateWebhookRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new webhook with an idempotency key. Repeated calls with the same key replay the
+    /// original response.
+    /// </summary>
+    Task<WebhookCreated> CreateWebhookAsync(CreateWebhookRequest request, string? idempotencyKey, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates a webhook.
@@ -226,12 +275,12 @@ public interface ILicenseManagementClient
     Task<IEnumerable<WebhookDelivery>> GetWebhookDeliveriesAsync(string webhookId, int limit = 50, int offset = 0, string? status = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a specific webhook delivery.
+    /// Gets a specific webhook delivery. Returns <c>null</c> when the delivery does not exist (404).
     /// </summary>
     /// <param name="webhookId">The webhook ID (ULID).</param>
     /// <param name="deliveryId">The delivery ID (ULID).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The delivery details.</returns>
+    /// <returns>The delivery details, or null if not found.</returns>
     Task<WebhookDeliveryDetail?> GetWebhookDeliveryAsync(string webhookId, string deliveryId, CancellationToken cancellationToken = default);
 
     /// <summary>

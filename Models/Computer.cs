@@ -3,7 +3,7 @@ namespace LicenseManagement.Client.Models;
 /// <summary>
 /// Represents a computer/device that has software installed.
 /// </summary>
-public class Computer
+public sealed class Computer
 {
     /// <summary>
     /// The unique identifier (ULID) of the computer.

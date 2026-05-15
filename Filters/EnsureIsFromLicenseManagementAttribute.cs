@@ -16,6 +16,7 @@ namespace LicenseManagement.Client.Filters;
 /// <list type="bullet">
 /// <item>The X-Webhook-Signature header contains a valid HMAC-SHA256 signature</item>
 /// <item>The X-Webhook-Timestamp header contains a timestamp within the tolerance window (default 5 minutes)</item>
+/// <item>The request body does not exceed <see cref="WebhookOptions.MaxBodyBytes"/> (default 1 MB)</item>
 /// </list>
 /// </remarks>
 /// <example>
@@ -30,7 +31,7 @@ namespace LicenseManagement.Client.Filters;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
-public class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
+public sealed class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
 {
     /// <summary>
     /// Creates a new instance of the EnsureIsFromLicenseManagementAttribute.
@@ -39,8 +40,10 @@ public class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
     {
     }
 
-    private class EnsureIsFromLicenseManagementFilter : IAsyncResourceFilter
+    private sealed class EnsureIsFromLicenseManagementFilter : IAsyncResourceFilter
     {
+        private const int BufferThresholdBytes = 81920;
+
         private readonly IOptions<WebhookOptions> _options;
         private readonly ILogger<EnsureIsFromLicenseManagementFilter>? _logger;
 
@@ -55,13 +58,31 @@ public class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
         public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
         {
             var request = context.HttpContext.Request;
+            var opts = _options.Value;
+            var maxBodyBytes = opts.MaxBodyBytes > 0 ? opts.MaxBodyBytes : WebhookOptions.DefaultMaxBodyBytes;
 
-            // Enable buffering so we can read the body multiple times
-            request.EnableBuffering();
+            // Reject oversized bodies before reading anything off the wire.
+            if (request.ContentLength is long len && len > maxBodyBytes)
+            {
+                _logger?.LogWarning(
+                    "Webhook request rejected: body of {ContentLength} bytes exceeds limit of {Limit} bytes",
+                    len, maxBodyBytes);
+                context.Result = new StatusCodeResult(StatusCodes.Status413PayloadTooLarge);
+                return;
+            }
 
-            // Get the signature and timestamp headers
+            // Bound the buffer so a chunked body without Content-Length cannot exhaust memory or
+            // spill an arbitrary amount to disk.
+            request.EnableBuffering(bufferThreshold: BufferThresholdBytes, bufferLimit: maxBodyBytes);
+
             var signature = request.Headers["X-Webhook-Signature"].FirstOrDefault();
+            // Prefer Unix-seconds timestamp; fall back to legacy ISO header for backward compatibility
+            // with vendors still on the previous webapp release (see WEBAPP-FIXES-2026-05-15).
             var timestamp = request.Headers["X-Webhook-Timestamp"].FirstOrDefault();
+            if (string.IsNullOrEmpty(timestamp))
+            {
+                timestamp = request.Headers["X-Webhook-Timestamp-ISO"].FirstOrDefault();
+            }
 
             if (string.IsNullOrEmpty(signature))
             {
@@ -77,27 +98,33 @@ public class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
                 return;
             }
 
-            // Read the request body
             string body;
             using (var reader = new StreamReader(request.Body, leaveOpen: true))
             {
-                body = await reader.ReadToEndAsync();
-                request.Body.Position = 0; // Reset for downstream handlers
+                body = await reader.ReadToEndAsync().ConfigureAwait(false);
+                request.Body.Position = 0;
             }
 
-            // Get secrets from options
-            var secret = _options.Value.Secret;
-            var secondarySecret = _options.Value.SecondarySecret;
-            var tolerance = _options.Value.TimestampTolerance ?? WebhookSignatureValidator.DefaultTimestampTolerance;
+            if (body.Length > maxBodyBytes)
+            {
+                _logger?.LogWarning(
+                    "Webhook request rejected: streamed body of {Length} bytes exceeds limit of {Limit} bytes",
+                    body.Length, maxBodyBytes);
+                context.Result = new StatusCodeResult(StatusCodes.Status413PayloadTooLarge);
+                return;
+            }
+
+            var secret = opts.Secret;
+            var secondarySecret = opts.SecondarySecret;
+            var tolerance = opts.TimestampTolerance ?? WebhookSignatureValidator.DefaultTimestampTolerance;
 
             if (string.IsNullOrEmpty(secret))
             {
                 _logger?.LogError("Webhook configuration error: No webhook secret configured");
-                context.Result = new StatusCodeResult(500);
+                context.Result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
                 return;
             }
 
-            // Validate the signature (with fallback for key rotation)
             bool isValid;
             if (!string.IsNullOrEmpty(secondarySecret))
             {
@@ -118,7 +145,7 @@ public class EnsureIsFromLicenseManagementAttribute : TypeFilterAttribute
             }
 
             _logger?.LogDebug("Webhook signature verified successfully");
-            await next();
+            await next().ConfigureAwait(false);
         }
     }
 }

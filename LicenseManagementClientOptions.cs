@@ -3,7 +3,7 @@ namespace LicenseManagement.Client;
 /// <summary>
 /// Configuration options for the License Management client.
 /// </summary>
-public class LicenseManagementClientOptions
+public sealed class LicenseManagementClientOptions
 {
     /// <summary>
     /// The master API key for authenticating with the License Management API.
