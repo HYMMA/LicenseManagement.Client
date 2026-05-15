@@ -3,7 +3,7 @@ namespace LicenseManagement.Client.Models;
 /// <summary>
 /// Represents a software vendor in the license management system.
 /// </summary>
-public class Vendor
+public sealed class Vendor
 {
     /// <summary>
     /// The unique identifier (ULID) of the vendor.

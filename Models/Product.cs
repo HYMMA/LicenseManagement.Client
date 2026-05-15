@@ -3,7 +3,7 @@ namespace LicenseManagement.Client.Models;
 /// <summary>
 /// Represents a software product that can be licensed.
 /// </summary>
-public class Product
+public sealed class Product
 {
     /// <summary>
     /// The unique identifier (ULID) of the product.
