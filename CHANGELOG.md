@@ -39,7 +39,10 @@ Addresses findings from `docs/AUDIT-2026-05-14.md` after the companion server-si
 ### Fixed
 
 - The optional `LicenseManagementException(message, statusCode, innerException, …)` constructor now also accepts `responseContent` and `correlationId`. (L-4)
-- Test project pinned to `net8.0` (was preview `net10.0`). (H-6)
+
+### Audit findings not applied
+
+- **H-6** (test project on `net10.0`) — the audit assumed net10 was unreleased; it GA'd as LTS in November 2025. The test project stays on `net10.0`.
 
 ## [1.2.1] - 2026-05-13
 
